@@ -3,6 +3,7 @@
 module Model where
 
 data InfoToShow = ShowNothing
+                | ShowCircle
                 | ShowANumber Int
                 | ShowAChar   Char
 
@@ -15,4 +16,4 @@ data GameState = GameState {
                  }
 
 initialState :: GameState
-initialState = GameState ShowNothing 0
+initialState = GameState ShowCircle 0
