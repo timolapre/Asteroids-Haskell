@@ -9,8 +9,17 @@ view :: GameState -> IO Picture
 view = return . viewPure
 
 viewPure :: GameState -> Picture
-viewPure gstate = case infoToShow gstate of
-  ShowNothing       -> blank
-  ShowANumber n     -> color green (text (show n))
-  ShowAChar   c     -> color green (text [c])
-  ShowCircle  x y r -> translate x y (color green (circle r))
+viewPure gstate = case state gstate of
+                    Running -> showRunState gstate
+                    GameOver -> undefined
+                    Paused -> undefined
+
+showRunState gstate = case objects gstate of
+                        x -> pictures (map toPicture x) 
+
+toPicture :: Objects -> Picture
+toPicture object = case object of
+                Player info -> Color (colour info) (translate (x info) (y info) (circle (size info)))
+                Asteroid info -> Color (colour info) (translate (x info) (y info) (circle (size info)))
+                AlienShip info -> Color (colour info) (translate (x info) (y info) (circle (size info)))
+                Bullet info -> Color (colour info) (translate (x info) (y info) (circle (size info)))

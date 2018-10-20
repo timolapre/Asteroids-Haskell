@@ -8,7 +8,7 @@ import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
 
-moveStep = 5
+{-moveStep = 5
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -30,7 +30,7 @@ input e gstate = return (inputKey e gstate)
 
 inputKey :: Event -> GameState -> GameState
 inputKey (EventKey (Char 'w') Down _ _) gstate
-  = gstate { infoToShow = (getInfo gstate) {y = returnY gstate + moveStep}}
+  = gstate { enemies!!0 = (getInfo gstate) {y = returnY gstate + moveStep}}
 inputKey (EventKey (Char 'a') Down _ _) gstate
   = gstate { infoToShow = (getInfo gstate) {x = returnX gstate - moveStep}}
 inputKey (EventKey (Char 's') Down _ _) gstate
@@ -53,4 +53,10 @@ getInfo :: GameState -> InfoToShow
 getInfo (GameState x y) = x
 
 move :: Enemy -> Direction -> Int -> Enemy
-move e Upm x = undefined
+move e Upm x = undefined-}
+
+input :: Event -> GameState -> IO GameState
+input e gstate = return gstate
+
+step :: Float -> GameState -> IO GameState
+step f gstate = return gstate
