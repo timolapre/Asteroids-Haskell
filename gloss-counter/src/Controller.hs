@@ -8,6 +8,7 @@ import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
 
+moveStep = 5
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -29,17 +30,16 @@ input e gstate = return (inputKey e gstate)
 
 inputKey :: Event -> GameState -> GameState
 inputKey (EventKey (Char 'w') Down _ _) gstate
-  = gstate { infoToShow = (ShowCircle (returnX gstate) (returnY gstate +10) (returnR gstate))}
+  = gstate { infoToShow = (getInfo gstate) {y = returnY gstate + moveStep}}
 inputKey (EventKey (Char 'a') Down _ _) gstate
-  = gstate { infoToShow = (ShowCircle (returnX gstate -10) (returnY gstate) (returnR gstate))}
+  = gstate { infoToShow = (getInfo gstate) {x = returnX gstate - moveStep}}
 inputKey (EventKey (Char 's') Down _ _) gstate
-  = gstate { infoToShow = (ShowCircle (returnX gstate) (returnY gstate -10) (returnR gstate))}
+  = gstate { infoToShow = (getInfo gstate) {y = returnY gstate - moveStep}}
 inputKey (EventKey (Char 'd') Down _ _) gstate
-  = gstate { infoToShow = (ShowCircle (returnX gstate +10) (returnY gstate) (returnR gstate))}
+  = gstate { infoToShow = (getInfo gstate) {x = returnX gstate + moveStep}}
 inputKey _ gstate = gstate -- Otherwise keep the same
 
-
--- shit made by moi wat denk beter kan
+-- shit made by moi wat waarschijnlijk beter kan
 returnX :: GameState -> Float
 returnX g@(GameState (ShowCircle x _ _) _) = x
 
@@ -48,3 +48,9 @@ returnY g@(GameState (ShowCircle _ y _) _) = y
 
 returnR :: GameState -> Float
 returnR g@(GameState (ShowCircle _ _ r) _) = r
+
+getInfo :: GameState -> InfoToShow
+getInfo (GameState x y) = x
+
+move :: Enemy -> Direction -> Int -> Enemy
+move e Upm x = undefined
