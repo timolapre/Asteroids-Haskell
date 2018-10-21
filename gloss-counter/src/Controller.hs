@@ -22,41 +22,44 @@ step secs gstate
        return $ GameState (ShowCircle x y newNumber) 0
   | otherwise
   = -- Just update the elapsed time
-    return $ gstate { elapsedTime = elapsedTime gstate + secs }
+    return $ gstate { elapsedTime = elapsedTime gstate + secs }-}
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
-input e gstate = return (inputKey e gstate)
+input event gstate = case event of
+                        (EventKey (Char 'w') Down _ _) | elapsedTime gstate > 0.1 -> do
+                                                                                          let p = move (objects gstate !! 0) North 10
+                                                                                          let newlist = tail (objects gstate)
+                                                                                          return gstate {objects = p : newlist}
+                        (EventKey (Char 's') Down _ _) -> do   
+                                                                  let p = move (objects gstate !! 0) South 10
+                                                                  let newlist = tail (objects gstate)
+                                                                  return gstate {objects = p : newlist}
+                        (EventKey (Char 'd') Down _ _) -> do
+                                                                  let p = move (objects gstate !! 0) East 10
+                                                                  let newlist = tail (objects gstate)
+                                                                  return gstate {objects = p : newlist}
+                        (EventKey (Char 'a') Down _ _) -> do
+                                                                  let p = move (objects gstate !! 0) West 10
+                                                                  let newlist = tail (objects gstate)
+                                                                  return gstate {objects = p : newlist}
+                        _ -> return gstate
 
-inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (Char 'w') Down _ _) gstate
-  = gstate { enemies!!0 = (getInfo gstate) {y = returnY gstate + moveStep}}
-inputKey (EventKey (Char 'a') Down _ _) gstate
-  = gstate { infoToShow = (getInfo gstate) {x = returnX gstate - moveStep}}
-inputKey (EventKey (Char 's') Down _ _) gstate
-  = gstate { infoToShow = (getInfo gstate) {y = returnY gstate - moveStep}}
-inputKey (EventKey (Char 'd') Down _ _) gstate
-  = gstate { infoToShow = (getInfo gstate) {x = returnX gstate + moveStep}}
-inputKey _ gstate = gstate -- Otherwise keep the same
+move :: Object -> Direction -> Float -> Object
+move obj dir n = case dir of
+                    North -> obj {y = (y obj) + n}
+                    South -> obj {y = (y obj) - n}
+                    East -> obj {x = (x obj) + n}
+                    West -> obj {x = (x obj) - n}
 
--- shit made by moi wat waarschijnlijk beter kan
-returnX :: GameState -> Float
-returnX g@(GameState (ShowCircle x _ _) _) = x
+moveDir :: Object -> Float -> Float -> Object
+moveDir obj dir n = obj {y = (y obj) + n * cos(dir * pi/180), x = (x obj) + n * sin(dir * pi/180)}
 
-returnY :: GameState -> Float
-returnY g@(GameState (ShowCircle _ y _) _) = y
-
-returnR :: GameState -> Float
-returnR g@(GameState (ShowCircle _ _ r) _) = r
-
-getInfo :: GameState -> InfoToShow
-getInfo (GameState x y) = x
-
-move :: Enemy -> Direction -> Int -> Enemy
-move e Upm x = undefined-}
-
-input :: Event -> GameState -> IO GameState
-input e gstate = return gstate
+randomNumber :: Float -> Float -> IO Float
+randomNumber low high = randomRIO(low,high)
 
 step :: Float -> GameState -> IO GameState
-step f gstate = return gstate
+step secs gstate = do
+                  let addast = [Asteroid {x = 0, y = 0, size = 30, colour = asteroidColor, dir = 130}]
+                  let newast = [moveDir x (dir x) 1 | x <- tail (objects gstate)]
+                  return (gstate {elapsedTime = (elapsedTime gstate) + secs, objects = (objects gstate)!!0 : newast ++ addast})

@@ -17,9 +17,9 @@ viewPure gstate = case state gstate of
 showRunState gstate = case objects gstate of
                         x -> pictures (map toPicture x) 
 
-toPicture :: Objects -> Picture
+toPicture :: Object -> Picture
 toPicture object = case object of
-                Player info -> Color (colour info) (translate (x info) (y info) (circle (size info)))
-                Asteroid info -> Color (colour info) (translate (x info) (y info) (circle (size info)))
-                AlienShip info -> Color (colour info) (translate (x info) (y info) (circle (size info)))
-                Bullet info -> Color (colour info) (translate (x info) (y info) (circle (size info)))
+                Player x y size color -> Color color (translate x y (circle size))
+                Asteroid x y size color dir -> Color color (translate x y (circle size))
+                AlienShip x y size color -> Color color (translate x y (circle size))
+                Bullet x y size color -> Color color (translate x y (circle size))
