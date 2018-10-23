@@ -62,5 +62,5 @@ step :: Float -> GameState -> IO GameState
 step secs gstate = do
                   rand <- randomNumber 0 360
                   let addast = [Asteroid {x = 0, y = 0, size = 30, colour = asteroidColor, dir = rand}]
-                  let newast = [moveDir x (dir x) 1 | x <- tail (objects gstate)]
+                  let newast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 768, abs (y obj) <= 512]
                   return (gstate {elapsedTime = (elapsedTime gstate) + secs, objects = (objects gstate)!!0 : newast ++ addast})
