@@ -60,6 +60,7 @@ randomNumber low high = randomRIO(low,high)
 
 step :: Float -> GameState -> IO GameState
 step secs gstate = do
-                  let addast = [Asteroid {x = 0, y = 0, size = 30, colour = asteroidColor, dir = 130}]
+                  rand <- randomNumber 0 360
+                  let addast = [Asteroid {x = 0, y = 0, size = 30, colour = asteroidColor, dir = rand}]
                   let newast = [moveDir x (dir x) 1 | x <- tail (objects gstate)]
                   return (gstate {elapsedTime = (elapsedTime gstate) + secs, objects = (objects gstate)!!0 : newast ++ addast})
