@@ -129,4 +129,4 @@ collide obj1 obj2 | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + si
                   | otherwise = False
 
 checkCollision :: Object -> Object -> [Object] -> [Object]
-checkCollision obj1 obj2 list | collide obj1 obj2 -> list ++ [newAsteroid, newAsteroid]
+checkCollision obj1 obj2 list | collide obj1 obj2 = undefined -- list ++ [newAsteroid, newAsteroid]
