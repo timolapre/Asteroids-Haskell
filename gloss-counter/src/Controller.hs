@@ -109,13 +109,12 @@ runningStep :: Float -> GameState -> IO GameState
 runningStep secs gstate = do
                             let objs = objects gstate
                             let player = movePlayer (objs!!0) (cntrls gstate)
+                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collide ((objects gstate)!!0) obj == False]
                             case elapsedTime gstate + secs >= 0.75 of
                               True -> do
                                     newast <- newAsteroid
-                                    let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
                                     return $ (gstate {elapsedTime = 0, objects = player : moveast ++ [newast]})
                               _ -> do
-                                    let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collide ((objects gstate)!!0) obj == False]
                                     return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : moveast})
 
 menuStep :: Float -> GameState -> IO GameState
