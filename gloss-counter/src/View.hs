@@ -10,6 +10,7 @@ view = return . viewPure
 
 viewPure :: GameState -> Picture
 viewPure gstate = case state gstate of
+                    Menu -> undefined
                     Running -> showRunState gstate
                     GameOver -> undefined
                     Paused -> undefined

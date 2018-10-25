@@ -27,10 +27,10 @@ step secs gstate
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input event gstate = case event of
-                        (EventKey (Char 'w') Down _ _) | elapsedTime gstate > 0.1 -> do
-                                                                                          let p = move (objects gstate !! 0) North 10
-                                                                                          let newlist = tail (objects gstate)
-                                                                                          return gstate {objects = p : newlist}
+                        (EventKey (Char 'w') Down _ _) -> do
+                                                                  let p = move (objects gstate !! 0) North 10
+                                                                  let newlist = tail (objects gstate)
+                                                                  return gstate {objects = p : newlist}
                         (EventKey (Char 's') Down _ _) -> do   
                                                                   let p = move (objects gstate !! 0) South 10
                                                                   let newlist = tail (objects gstate)
@@ -59,8 +59,38 @@ randomNumber :: Float -> Float -> IO Float
 randomNumber low high = randomRIO(low,high)
 
 step :: Float -> GameState -> IO GameState
-step secs gstate = do
-                  rand <- randomNumber 0 360
-                  let addast = [Asteroid {x = 0, y = 0, size = 30, colour = asteroidColor, dir = rand}]
-                  let newast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 768, abs (y obj) <= 512]
-                  return (gstate {elapsedTime = (elapsedTime gstate) + secs, objects = (objects gstate)!!0 : newast ++ addast})
+step secs gstate = case state gstate of
+                      Menu -> undefined
+                      Running -> runningstep secs gstate
+                      GameOver -> undefined
+                      Paused -> undefined
+
+posoffset = 60
+
+newAsteroid :: IO Object
+newAsteroid = do
+                randPos <- randomNumber 0 3
+                randSize <- randomNumber 20 50
+                randDir <- randomNumber (-45) 45
+                case round randPos of
+                      0 -> do randX <- randomNumber (-384+posoffset) (384-posoffset)
+                              return Asteroid {x = randX, y = (-512-30), size = randSize, colour = asteroidColor, dir = randDir}
+                      1 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
+                              return Asteroid {x = (-384-30), y = randY, size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
+                      2 -> do randX <- randomNumber (-384+posoffset) (384-posoffset)
+                              return Asteroid {x = randX, y = (512+30), size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
+                      3 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
+                              return Asteroid {x = (384+30), y = randY, size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
+                      
+                      
+
+runningstep :: Float -> GameState -> IO GameState
+runningstep secs gstate | elapsedTime gstate + secs >= 0.75
+                        = do
+                            newast <- newAsteroid
+                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= (768+50), abs (y obj) <= (512+50)]
+                            return $ (gstate {elapsedTime = 0, objects = (objects gstate)!!0 : moveast ++ [newast]})
+                        | otherwise
+                        = do
+                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= (768+50), abs (y obj) <= (512+50)]
+                            return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = (objects gstate)!!0 : moveast})
