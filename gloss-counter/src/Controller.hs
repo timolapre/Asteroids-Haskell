@@ -100,8 +100,6 @@ newAsteroid = do
                       3 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
                               return Asteroid {x = (384+30), y = randY, size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
                       
-                      
-
 runningStep :: Float -> GameState -> IO GameState
 runningStep secs gstate | elapsedTime gstate + secs >= 0.75
                         = do
@@ -110,7 +108,7 @@ runningStep secs gstate | elapsedTime gstate + secs >= 0.75
                             return $ (gstate {elapsedTime = 0, objects = (objects gstate)!!0 : moveast ++ [newast]})
                         | otherwise
                         = do
-                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
+                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collide ((objects gstate)!!0) obj == False]
                             return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = (objects gstate)!!0 : moveast})
 
 menuStep :: Float -> GameState -> IO GameState
@@ -118,4 +116,11 @@ menuStep secs gstate = return gstate
 
 pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
+
+collide :: Object -> Object -> Bool
+collide obj1 obj2 | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                  | otherwise = False
+
+checkCollision :: Object -> Object -> [Object] -> [Object]
+checkCollision obj1 obj2 list | collide obj1 obj2 -> list ++ [newAsteroid, newAsteroid]
         

@@ -20,12 +20,12 @@ showRunState gstate = case objects gstate of
 
 showMenuState gstate = pictures (map toPicture menuState)
 
-showPausedState gstate = pictures (map toPicture pausedState)
+showPausedState gstate = pictures (map toPicture (objects gstate) ++ (map toPicture pausedState))
 
 toPicture :: Object -> Picture
 toPicture object = case object of
-                Player x y size color -> Color color (translate x y (ThickCircle 5 size))
-                Asteroid x y size color dir -> Color color (translate x y (ThickCircle 5 size))
+                Player x y size color -> Color color (translate x y (ThickCircle size 3))
+                Asteroid x y size color dir -> Color color (translate x y (ThickCircle size 3))
                 AlienShip x y size color -> Color color (translate x y (circle size))
                 Bullet x y size color -> Color color (translate x y (circle size))
-                Tekst x y string -> color playerColor (translate x y (Scale 0.3 0.3 (Text string)))
+                Tekst x y string -> color textColor (translate x y (Scale 0.3 0.3 (Text string)))
