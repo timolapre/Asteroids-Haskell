@@ -17,7 +17,7 @@ step secs gstate
   = -- We show a new random number
     do x <- return (returnX gstate)
        y <- return (returnY gstate)
-       newNumber <- case gstate of GameState (ShowCircle _ _ r) _ -> return (r+0)  
+       newNumber <- case gstate of GameState (ShowCircle _ _ r) _ -> return (r+0)
                                    GameState (ShowNothing) _ -> return 0
        return $ GameState (ShowCircle x y newNumber) 0
   | otherwise
@@ -45,31 +45,36 @@ pausedInput event gstate = case event of
 runningInput :: Event -> GameState -> IO GameState
 runningInput event gstate = case event of
                         (EventKey (Char 'w') Down _ _) -> do
-                                                                let p = move (objects gstate !! 0) North 10
-                                                                let newlist = tail (objects gstate)
-                                                                return gstate {objects = p : newlist}
-                        (EventKey (Char 's') Down _ _) -> do   
-                                                                let p = move (objects gstate !! 0) South 10
-                                                                let newlist = tail (objects gstate)
-                                                                return gstate {objects = p : newlist}
-                        (EventKey (Char 'd') Down _ _) -> do
-                                                                let p = move (objects gstate !! 0) East 10
-                                                                let newlist = tail (objects gstate)
-                                                                return gstate {objects = p : newlist}
+                                                                return gstate {cntrls = (cntrls gstate) {forward = True}}
+                        (EventKey (Char 's') Down _ _) -> do
+                                                                return gstate {cntrls = (cntrls gstate) {backward = True}}
                         (EventKey (Char 'a') Down _ _) -> do
-                                                                let p = move (objects gstate !! 0) West 10
-                                                                let newlist = tail (objects gstate)
-                                                                return gstate {objects = p : newlist}
-                        (EventKey (Char 'p') Down _ _) -> do
+                                                                return gstate {cntrls = (cntrls gstate) {left = True}}
+                        (EventKey (Char 'd') Down _ _) -> do
+                                                                return gstate {cntrls = (cntrls gstate) {right = True}}
+                        (EventKey (Char 'w') Up _ _) -> do
+                                                                return gstate {cntrls = (cntrls gstate) {forward = False}}
+                        (EventKey (Char 's') Up _ _) -> do
+                                                                return gstate {cntrls = (cntrls gstate) {backward = False}}
+                        (EventKey (Char 'a') Up _ _) -> do
+                                                                return gstate {cntrls = (cntrls gstate) {left = False}}
+                        (EventKey (Char 'd') Up _ _) -> do
+                                                                return gstate {cntrls = (cntrls gstate) {right = False}}
+                        (EventKey (Char 'p') Up _ _) -> do
                                                                 return gstate {state = Paused}
                         _ -> return gstate
 
-move :: Object -> Direction -> Float -> Object
-move obj dir n = case dir of
-                    North -> obj {y = (y obj) + n}
-                    South -> obj {y = (y obj) - n}
-                    East -> obj {x = (x obj) + n}
-                    West -> obj {x = (x obj) - n}
+
+movePlayer :: Object -> Input -> Object
+movePlayer obj inpt = do
+                        let o1 = if left inpt then Controller.rotate obj (-1) else obj
+                        let o2 = if right inpt then Controller.rotate o1 1 else o1
+                        let o3 = if forward inpt then moveDir o2 (dir o2) 1 else o2
+                        let o4 = if backward inpt then moveDir o3 (dir o3) (-1) else o3
+                        o4
+
+rotate :: Object -> Float -> Object
+rotate obj n = obj {dir = (dir obj) + n}
 
 moveDir :: Object -> Float -> Float -> Object
 moveDir obj dir n = obj {y = (y obj) + n * cos(dir * pi/180), x = (x obj) + n * sin(dir * pi/180)}
@@ -99,17 +104,19 @@ newAsteroid = do
                               return Asteroid {x = randX, y = (256+30), size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
                       3 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
                               return Asteroid {x = (384+30), y = randY, size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
-                      
+
 runningStep :: Float -> GameState -> IO GameState
-runningStep secs gstate | elapsedTime gstate + secs >= 0.75
-                        = do
-                            newast <- newAsteroid
-                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
-                            return $ (gstate {elapsedTime = 0, objects = (objects gstate)!!0 : moveast ++ [newast]})
-                        | otherwise
-                        = do
-                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collide ((objects gstate)!!0) obj == False]
-                            return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = (objects gstate)!!0 : moveast})
+runningStep secs gstate = do
+                            let objs = objects gstate
+                            let player = movePlayer (objs!!0) (cntrls gstate)
+                            case elapsedTime gstate + secs >= 0.75 of
+                              True -> do
+                                    newast <- newAsteroid
+                                    let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
+                                    return $ (gstate {elapsedTime = 0, objects = player : moveast ++ [newast]})
+                              _ -> do
+                                    let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collide ((objects gstate)!!0) obj == False]
+                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : moveast})
 
 menuStep :: Float -> GameState -> IO GameState
 menuStep secs gstate = return gstate
@@ -123,4 +130,3 @@ collide obj1 obj2 | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + si
 
 checkCollision :: Object -> Object -> [Object] -> [Object]
 checkCollision obj1 obj2 list | collide obj1 obj2 -> list ++ [newAsteroid, newAsteroid]
-        

@@ -24,7 +24,7 @@ showPausedState gstate = pictures (map toPicture (objects gstate) ++ (map toPict
 
 toPicture :: Object -> Picture
 toPicture object = case object of
-                Player x y size color -> Color color (translate x y (ThickCircle size 3))
+                Player x y size color dir -> Color color (translate x y (ThickCircle size 3))
                 Asteroid x y size color dir -> Color color (translate x y (ThickCircle size 3))
                 AlienShip x y size color -> Color color (translate x y (circle size))
                 Bullet x y size color -> Color color (translate x y (circle size))
