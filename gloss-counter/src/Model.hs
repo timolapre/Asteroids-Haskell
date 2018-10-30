@@ -27,16 +27,11 @@ textColor = makeColor 255 255 255 1
 
 data GameState = GameState {state :: State, objects :: [Object], elapsedTime :: Float, cntrls :: Input}
 
-<<<<<<< HEAD
 player = Player {x = 0, y = 0, size = 40, dir = 0, speed = Vec2(0,0)}
 asteroid = Asteroid {x = -40, y = -20, size = 80, dir = 0}
 alien = AlienShip {x = -40, y = -20, size = 80, dir = 0}
 
 scoreText = Tekst {x = 200, y = 200, string = "0"}
-=======
-player = Player {x = 0, y = 0, size = 40, colour = playerColor, dir = 0, speed = Vec2(0,0)}
-asteroid = Asteroid {x = -40, y = -20, size = 80, colour = asteroidColor, dir = 0}
->>>>>>> 40dffaf822c7dcabce81c7399d1fa6f5f400db0b
 
 menuText = Tekst {x = -300, y = 0, string = "Menu, press Space to start"}
 menuState :: [Object]

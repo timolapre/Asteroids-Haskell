@@ -146,6 +146,8 @@ collide obj1@Player{} obj2@Asteroid{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^
                                       | otherwise = False
 collide obj1@Asteroid{} obj2@Bullet{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
                                       | otherwise = False
+collide obj1@Bullet{} obj2@Asteroid{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                                      | otherwise = False
 collide _ _ = False
 
 checkCollision :: Object -> Object -> [Object] -> [Object]
