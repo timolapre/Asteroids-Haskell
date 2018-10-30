@@ -9,7 +9,7 @@ data State = Menu | Running | GameOver | Paused
 data Object =     Player {x :: Float, y :: Float, size :: Float, colour :: Color, dir :: Float}
                 | Asteroid {x :: Float, y :: Float, size :: Float, colour :: Color, dir :: Float}
                 | AlienShip {x :: Float, y :: Float, size :: Float, colour :: Color}
-                | Bullet {x :: Float, y :: Float, size :: Float, colour :: Color}
+                | Bullet {x :: Float, y :: Float, size :: Float, colour :: Color, dir :: Float}
                 | Tekst {x :: Float, y :: Float, string :: String}
 
 data Direction = North | East | South | West -- Up and Down is used for buttons which gives some problems hence the choice for compass directions
@@ -19,6 +19,7 @@ data Input = Input {left :: Bool, right :: Bool, forward :: Bool, backward :: Bo
 
 playerColor = makeColor 255 0 0 1
 asteroidColor = makeColor 255 255 0 1
+bulletColor = makeColor 0 255 0 1
 textColor = makeColor 255 255 255 1
 
 data GameState = GameState {state :: State, objects :: [Object], elapsedTime :: Float, cntrls :: Input}

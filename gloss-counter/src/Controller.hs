@@ -42,6 +42,9 @@ pausedInput event gstate = case event of
                                 (EventKey (Char 'p') Down _ _) -> return gstate {state = Running}
                                 _ -> return gstate
 
+newBullet :: Float -> Float -> Float -> Object
+newBullet x y dir = Bullet {x=x, y=y, size=10, colour=bulletColor, dir = dir}
+
 runningInput :: Event -> GameState -> IO GameState
 runningInput event gstate = case event of
                         (EventKey (Char 'w') Down _ _) -> do
@@ -52,6 +55,8 @@ runningInput event gstate = case event of
                                                                 return gstate {cntrls = (cntrls gstate) {left = True}}
                         (EventKey (Char 'd') Down _ _) -> do
                                                                 return gstate {cntrls = (cntrls gstate) {right = True}}
+                        (EventKey (SpecialKey KeySpace) Down _ _) -> do
+                                                                return gstate {objects = objects gstate ++ [newBullet (x (objects gstate!!0)) (y (objects gstate!!0)) (dir (objects gstate!!0))]}
                         (EventKey (Char 'w') Up _ _) -> do
                                                                 return gstate {cntrls = (cntrls gstate) {forward = False}}
                         (EventKey (Char 's') Up _ _) -> do
@@ -86,7 +91,7 @@ step :: Float -> GameState -> IO GameState
 step secs gstate = case state gstate of
                       Menu -> menuStep secs gstate
                       Running -> runningStep secs gstate
-                      GameOver -> undefined
+                      GameOver -> gameoverStep secs gstate
                       Paused -> pausedStep secs gstate
 
 newAsteroid :: IO Object
@@ -105,11 +110,17 @@ newAsteroid = do
                       3 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
                               return Asteroid {x = (384+30), y = randY, size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
 
+newAst :: Object
+newAst = Asteroid {x = 0, y = 0, size = 50, colour = asteroidColor, dir = 0}
+
+menuStep :: Float -> GameState -> IO GameState
+menuStep secs gstate = return gstate
+
 runningStep :: Float -> GameState -> IO GameState
 runningStep secs gstate = do
                             let objs = objects gstate
                             let player = movePlayer (objs!!0) (cntrls gstate)
-                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collide ((objects gstate)!!0) obj == False]
+                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412] --, collide ((objects gstate)!!0) obj == False]
                             case elapsedTime gstate + secs >= 0.75 of
                               True -> do
                                     newast <- newAsteroid
@@ -117,8 +128,8 @@ runningStep secs gstate = do
                               _ -> do
                                     return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : moveast})
 
-menuStep :: Float -> GameState -> IO GameState
-menuStep secs gstate = return gstate
+gameoverStep :: Float -> GameState -> IO GameState
+gameoverStep secs gstate = return gstate
 
 pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
@@ -128,4 +139,8 @@ collide obj1 obj2 | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + si
                   | otherwise = False
 
 checkCollision :: Object -> Object -> [Object] -> [Object]
-checkCollision obj1 obj2 list | collide obj1 obj2 = undefined -- list ++ [newAsteroid, newAsteroid]
+checkCollision obj1 obj2 list   | collide obj1 obj2 = list ++ [newAst]
+                                | otherwise = list
+
+getObjects :: [Object] -> String -> [Object]
+getObjects list name = 
