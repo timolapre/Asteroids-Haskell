@@ -143,4 +143,4 @@ checkCollision obj1 obj2 list   | collide obj1 obj2 = list ++ [newAst]
                                 | otherwise = list
 
 getObjects :: [Object] -> String -> [Object]
-getObjects list name = 
+getObjects list name = undefined
