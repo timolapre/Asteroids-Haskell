@@ -6,7 +6,9 @@ import Graphics.Gloss
 
 data State = Menu | Running | GameOver | Paused
 
-data Object =     Player {x :: Float, y :: Float, size :: Float, colour :: Color, dir :: Float}
+data Vec2 = Vec2 (Float, Float)
+
+data Object =     Player {x :: Float, y :: Float, size :: Float, colour :: Color, dir :: Float, speed :: Vec2}
                 | Asteroid {x :: Float, y :: Float, size :: Float, colour :: Color, dir :: Float}
                 | AlienShip {x :: Float, y :: Float, size :: Float, colour :: Color}
                 | Bullet {x :: Float, y :: Float, size :: Float, colour :: Color, dir :: Float}
@@ -24,7 +26,7 @@ textColor = makeColor 255 255 255 1
 
 data GameState = GameState {state :: State, objects :: [Object], elapsedTime :: Float, cntrls :: Input}
 
-player = Player {x = 0, y = 0, size = 40, colour = playerColor, dir = 0}
+player = Player {x = 0, y = 0, size = 40, colour = playerColor, dir = 0, speed = Vec2(0,0)}
 asteroid = Asteroid {x = -40, y = -20, size = 80, colour = asteroidColor, dir = 0}
 
 menuText = Tekst {x = -300, y = 0, string = "Menu, press Space to start"}

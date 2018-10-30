@@ -74,9 +74,14 @@ movePlayer :: Object -> Input -> Object
 movePlayer obj inpt = do
                         let o1 = if left inpt then Controller.rotate obj (-1) else obj
                         let o2 = if right inpt then Controller.rotate o1 1 else o1
-                        let o3 = if forward inpt then moveDir o2 (dir o2) 1 else o2
-                        let o4 = if backward inpt then moveDir o3 (dir o3) (-1) else o3
-                        o4
+                        let direction = dir o2
+                        let Vec2(vx,vy) = speed o2
+                        let inc = vx / 60
+                        let dx = if forward inpt && lngt (vx,vy) < 2 then vx + 0.1 * sin(direction * pi/180) - inc else vx - inc
+                        let inc = vy / 60
+                        let dy = if forward inpt && lngt (vx,vy) < 2 then vy + 0.1 * cos(direction * pi/180) - inc else vy - inc
+                        o2{x = x o2 + dx, y = y o2 + dy, speed = Vec2(dx,dy)}
+                      where lngt (vx,vy) = sqrt(vx*vx + vy*vy)
 
 rotate :: Object -> Float -> Object
 rotate obj n = obj {dir = (dir obj) + n}
@@ -135,9 +140,12 @@ pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
 
 collide :: Object -> Object -> Bool
-collide obj1 obj2 | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
-                  | otherwise = False
-
+collide obj1@Player{} obj2@Asteroid{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                                      | otherwise = False
+collide obj1@Asteroid{} obj2@Bullet{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                                      | otherwise = False
+collide _ _ = False
+                                      
 checkCollision :: Object -> Object -> [Object] -> [Object]
 checkCollision obj1 obj2 list   | collide obj1 obj2 = list ++ [newAst]
                                 | otherwise = list
