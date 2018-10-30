@@ -43,7 +43,7 @@ pausedInput event gstate = case event of
                                 _ -> return gstate
 
 newBullet :: Float -> Float -> Float -> Object
-newBullet x y dir = Bullet {x=x, y=y, size=10, colour=bulletColor, dir = dir}
+newBullet x y dir = Bullet {x=x, y=y, size=10, dir = dir}
 
 runningInput :: Event -> GameState -> IO GameState
 runningInput event gstate = case event of
@@ -72,8 +72,8 @@ runningInput event gstate = case event of
 
 movePlayer :: Object -> Input -> Object
 movePlayer obj inpt = do
-                        let o1 = if left inpt then Controller.rotate obj (-1) else obj
-                        let o2 = if right inpt then Controller.rotate o1 1 else o1
+                        let o1 = if left inpt then Controller.rotate obj (-2) else obj
+                        let o2 = if right inpt then Controller.rotate o1 2 else o1
                         let o3 = if forward inpt then moveDir o2 (dir o2) 1 else o2
                         let o4 = if backward inpt then moveDir o3 (dir o3) (-1) else o3
                         o4
@@ -102,16 +102,16 @@ newAsteroid = do
                 randDir <- randomNumber (-45) 45
                 case round randPos of
                       0 -> do randX <- randomNumber (-384+posoffset) (384-posoffset)
-                              return Asteroid {x = randX, y = (-256-30), size = randSize, colour = asteroidColor, dir = randDir}
+                              return Asteroid {x = randX, y = (-256-30), size = randSize, dir = randDir}
                       1 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
-                              return Asteroid {x = (-384-30), y = randY, size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
+                              return Asteroid {x = (-384-30), y = randY, size = randSize, dir = randDir + (randPos*90)}
                       2 -> do randX <- randomNumber (-384+posoffset) (384-posoffset)
-                              return Asteroid {x = randX, y = (256+30), size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
+                              return Asteroid {x = randX, y = (256+30), size = randSize, dir = randDir + (randPos*90)}
                       3 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
-                              return Asteroid {x = (384+30), y = randY, size = randSize, colour = asteroidColor, dir = randDir + (randPos*90)}
+                              return Asteroid {x = (384+30), y = randY, size = randSize, dir = randDir + (randPos*90)}
 
 newAst :: Object
-newAst = Asteroid {x = 0, y = 0, size = 50, colour = asteroidColor, dir = 0}
+newAst = Asteroid {x = 0, y = 0, size = 50, dir = 0}
 
 menuStep :: Float -> GameState -> IO GameState
 menuStep secs gstate = return gstate
@@ -120,13 +120,15 @@ runningStep :: Float -> GameState -> IO GameState
 runningStep secs gstate = do
                             let objs = objects gstate
                             let player = movePlayer (objs!!0) (cntrls gstate)
-                            let moveast = [moveDir obj (dir obj) 1 | obj <- tail (objects gstate), abs (x obj) <= 668, abs (y obj) <= 412] --, collide ((objects gstate)!!0) obj == False]
+                            let newAsteroids = concat [splitAsteroid (moveDir obj (dir obj) 0.7) (getBullets(objects gstate)) | obj <- getAsteroids(objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
+                            let newBullets = [moveDir obj (dir obj) 5 | obj <- getBullets(objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collideList (getAsteroids (objects gstate)) obj == False]
+                            let newAliens = [moveDir obj (dir (newAlienDirection obj player)) 0.5 | obj <- getAliens(objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
                             case elapsedTime gstate + secs >= 0.75 of
                               True -> do
                                     newast <- newAsteroid
-                                    return $ (gstate {elapsedTime = 0, objects = player : moveast ++ [newast]})
+                                    return $ (gstate {elapsedTime = 0, objects = player : newAsteroids ++ newBullets ++ newAliens ++ [newast]})
                               _ -> do
-                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : moveast})
+                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : newAsteroids ++ newBullets ++ newAliens})
 
 gameoverStep :: Float -> GameState -> IO GameState
 gameoverStep secs gstate = return gstate
@@ -135,12 +137,48 @@ pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
 
 collide :: Object -> Object -> Bool
-collide obj1 obj2 | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
-                  | otherwise = False
+collide obj1 obj2 = (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2
 
-checkCollision :: Object -> Object -> [Object] -> [Object]
-checkCollision obj1 obj2 list   | collide obj1 obj2 = list ++ [newAst]
-                                | otherwise = list
+collideList :: [Object] -> Object -> Bool
+collideList list obj = elem True [collide x obj | x <- list]
 
-getObjects :: [Object] -> String -> [Object]
-getObjects list name = undefined
+splitAsteroid :: Object -> [Object] -> [Object]
+splitAsteroid obj list  | collideList list obj && size obj > 30 = [obj {dir = dir obj + 45, size = size obj-15}, obj {dir = dir obj - 45, size = size obj-15}]
+                        | collideList list obj && size obj <= 30 = []
+                        | otherwise = [obj]
+
+
+newAlienDirection :: Object -> Object -> Object
+newAlienDirection alien player  | x alien-x player < 0 = alien{dir = 180+270-atan((y alien-y player)/(x alien-x player))* 180/pi}
+                                | otherwise = alien{dir = 270-atan((y player-y alien)/(x player-x alien))* 180/pi}
+
+
+
+-- \/\/\/ Get Objects from onscreen list \/\/\/
+getAsteroids :: [Object] -> [Object]
+getAsteroids list = [x | x <- list, isAsteroid x]
+
+isAsteroid :: Object -> Bool
+isAsteroid Asteroid{} = True
+isAsteroid _ = False
+
+getBullets :: [Object] -> [Object]
+getBullets list = [x | x <- list, isBullet x]
+
+isBullet :: Object -> Bool
+isBullet Bullet{} = True
+isBullet _ = False
+
+getAliens :: [Object] -> [Object]
+getAliens list = [x | x <- list, isAlien x]
+
+isAlien :: Object -> Bool
+isAlien AlienShip{} = True
+isAlien _ = False
+
+getPlayers :: [Object] -> [Object]
+getPlayers list = [x | x <- list, isPlayer x]
+
+isPlayer :: Object -> Bool
+isPlayer Player{} = True
+isPlayer _ = False
