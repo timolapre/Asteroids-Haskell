@@ -12,9 +12,9 @@ data Object =     Player {x :: Float, y :: Float, size :: Float, dir :: Float, s
                 | Asteroid {x :: Float, y :: Float, size :: Float, dir :: Float}
                 | AlienShip {x :: Float, y :: Float, size :: Float, dir :: Float}
                 | Bullet {x :: Float, y :: Float, size :: Float, dir :: Float}
-                | Tekst {x :: Float, y :: Float, string :: String}
+                | Tekst {myID :: String, x :: Float, y :: Float, string :: String, size :: Float}
 
-data Direction = North | East | South | West -- Up and Down is used for buttons which gives some problems hence the choice for compass directions
+data Direction = North | East | South | West
 data TurnDir = Left | Right
 
 data Input = Input {left :: Bool, right :: Bool, forward :: Bool, backward :: Bool}
@@ -25,21 +25,27 @@ alienColor = makeColor 255 0 255 1
 bulletColor = makeColor 0 255 0 1
 textColor = makeColor 255 255 255 1
 
-data GameState = GameState {state :: State, objects :: [Object], elapsedTime :: Float, cntrls :: Input}
+data GameState = GameState {state :: State, objects :: [Object], elapsedTime :: Float, cntrls :: Input, lives :: Int, score :: Int}
 
-player = Player {x = 0, y = 0, size = 40, dir = 0, speed = Vec2(0,0)}
+player = Player {x = 0, y = 0, size = 30, dir = 0, speed = Vec2(0,0)}
 asteroid = Asteroid {x = -40, y = -20, size = 80, dir = 0}
-alien = AlienShip {x = -40, y = -20, size = 80, dir = 0}
+alien = AlienShip {x = -40, y = -20, size = 30, dir = 0}
 
-scoreText = Tekst {x = 200, y = 200, string = "0"}
+livesText = Tekst {myID = "Lives", x = 230, y = 175, string = "", size = 0.3}
+scoreText = Tekst {myID = "Score", x = 0, y = 175, string = "", size = 0.3}
+pauseText = Tekst {myID = "", x = 200, y = 225, string = "Press p to Pause", size = 0.15}
 
-menuText = Tekst {x = -300, y = 0, string = "Menu, press Space to start"}
+menuText = Tekst {myID = "", x = -300, y = 0, string = "Menu, press Space to start", size = 0.3}
 menuState :: [Object]
 menuState = [menuText]
 
-pausedText = Tekst {x = -300, y = 0, string = "Paused, press P to continue"}
+pausedText = Tekst {myID = "", x = -300, y = 0, string = "Paused, press P to continue", size = 0.3}
 pausedState :: [Object]
 pausedState = [pausedText]
 
+gameoverText = Tekst {myID = "", x = -300, y = 0, string = "Game Over! press Space to play again", size = 0.2}
+gameoverState :: [Object]
+gameoverState = [gameoverText]
+
 initialState :: GameState
-initialState = GameState {state = Menu, objects = [player, alien], elapsedTime = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}}
+initialState = GameState {state = Menu, objects = [player, alien, scoreText, pauseText, livesText], elapsedTime = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}, lives = 3, score = 0}

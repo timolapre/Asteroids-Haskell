@@ -29,7 +29,7 @@ input :: Event -> GameState -> IO GameState
 input event gstate = case state gstate of
                                 Menu -> menuInput event gstate
                                 Running -> runningInput event gstate
-                                GameOver -> undefined
+                                GameOver -> gameoverInput event gstate
                                 Paused -> pausedInput event gstate
 
 menuInput :: Event -> GameState -> IO GameState
@@ -40,6 +40,11 @@ menuInput event gstate = case event of
 pausedInput :: Event -> GameState -> IO GameState
 pausedInput event gstate = case event of
                                 (EventKey (Char 'p') Down _ _) -> return gstate {state = Running}
+                                _ -> return gstate
+
+gameoverInput :: Event -> GameState -> IO GameState
+gameoverInput event gstate = case event of
+                                (EventKey (SpecialKey KeySpace) Down _ _) -> return gstate {state = Running, lives = 3, score = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}}
                                 _ -> return gstate
 
 newBullet :: Float -> Float -> Float -> Object
@@ -65,7 +70,7 @@ runningInput event gstate = case event of
                                                                 return gstate {cntrls = (cntrls gstate) {left = False}}
                         (EventKey (Char 'd') Up _ _) -> do
                                                                 return gstate {cntrls = (cntrls gstate) {right = False}}
-                        (EventKey (Char 'p') Up _ _) -> do
+                        (EventKey (Char 'p') Down _ _) -> do
                                                                 return gstate {state = Paused}
                         _ -> return gstate
 
@@ -81,7 +86,7 @@ movePlayer obj inpt = do
                         let inc = vy / 60
                         let dy = if forward inpt && lngt (vx,vy) < 2 then vy + 0.1 * cos(direction * pi/180) - inc else vy - inc
                         o2{x = x o2 + dx, y = y o2 + dy, speed = Vec2(dx,dy)}
-                      where lngt (vx,vy) = sqrt(vx*vx + vy*vy)
+                                where lngt (vx,vy) = sqrt(vx*vx + vy*vy)
 
 rotate :: Object -> Float -> Object
 rotate obj n = obj {dir = (dir obj) + n}
@@ -124,16 +129,32 @@ menuStep secs gstate = return gstate
 runningStep :: Float -> GameState -> IO GameState
 runningStep secs gstate = do
                             let objs = objects gstate
-                            let player = movePlayer (objs!!0) (cntrls gstate)
-                            let newAsteroids = concat [splitAsteroid (moveDir obj (dir obj) 0.7) (getBullets(objects gstate)) | obj <- getAsteroids(objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
-                            let newBullets = [moveDir obj (dir obj) 5 | obj <- getBullets(objects gstate), abs (x obj) <= 668, abs (y obj) <= 412, collideList (getAsteroids (objects gstate)) obj == False]
-                            let newAliens = [moveDir obj (dir (newAlienDirection obj player)) 0.5 | obj <- getAliens(objects gstate), abs (x obj) <= 668, abs (y obj) <= 412]
+                            let playerDied = collideList (getAsteroids objs) (objs!!0)
+                            let player = if (playerDied)
+                                                        then Player {x = 0, y = 0, size = 30, dir = 0, speed = Vec2(0,0)}
+                                                        else movePlayer (objs!!0) (cntrls gstate)
+                            let newAsteroids = if(playerDied)
+                                                        then []
+                                                        else concat [splitAsteroid (moveDir obj (dir obj) 0.7) (getBullets objs) | obj <- getAsteroids objs, abs (x obj) <= 668, abs (y obj) <= 412]
+                            let newBullets = [moveDir obj (dir obj) 5 | obj <- getBullets objs, abs (x obj) <= 668, abs (y obj) <= 412, collideList (getAsteroids objs) obj == False]
+                            let newAliens = [moveDir obj (dir (newAlienDirection obj player)) 0.5 | obj <- getAliens objs, abs (x obj) <= 668, abs (y obj) <= 412]
+                            let newTexts = [changeText x gstate | x <- getTexts objs]
+                            let newlives = if(playerDied)
+                                                        then (lives gstate-1)
+                                                        else lives gstate
+                            let newState = if(lives gstate <= 0)
+                                                        then GameOver
+                                                        else state gstate
+                            let newScore = if(collideList2 (getAsteroids objs) (getBullets objs))
+                                                        then score gstate + 1
+                                                        else score gstate
+                            if(lives gstate <= 0) then writeFile "src/highscores.txt" (show newScore) else return()
                             case elapsedTime gstate + secs >= 0.75 of
                               True -> do
                                     newast <- newAsteroid
-                                    return $ (gstate {elapsedTime = 0, objects = player : newAsteroids ++ newBullets ++ newAliens ++ [newast]})
+                                    return $ (gstate {elapsedTime = 0, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts ++ [newast], lives = newlives, state = newState, score = newScore})
                               _ -> do
-                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : newAsteroids ++ newBullets ++ newAliens})
+                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts, lives = newlives, state = newState, score = newScore})
 
 gameoverStep :: Float -> GameState -> IO GameState
 gameoverStep secs gstate = return gstate
@@ -142,7 +163,7 @@ pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
 
 collide :: Object -> Object -> Bool
-collide obj1@Player{} obj2@Asteroid{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+collide obj1@Asteroid{} obj2@Player{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
                                       | otherwise = False
 collide obj1@Asteroid{} obj2@Bullet{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
                                       | otherwise = False
@@ -150,12 +171,11 @@ collide obj1@Bullet{} obj2@Asteroid{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^
                                       | otherwise = False
 collide _ _ = False
 
-checkCollision :: Object -> Object -> [Object] -> [Object]
-checkCollision obj1 obj2 list   | collide obj1 obj2 = list ++ [newAst]
-                                | otherwise = list
-
 collideList :: [Object] -> Object -> Bool
 collideList list obj = elem True [collide x obj | x <- list]
+
+collideList2 :: [Object] -> [Object] -> Bool
+collideList2 list list2 = elem True [collideList list x | x <- list2]
 
 splitAsteroid :: Object -> [Object] -> [Object]
 splitAsteroid obj list  | collideList list obj && size obj > 30 = [obj {dir = dir obj + 45, size = size obj-15}, obj {dir = dir obj - 45, size = size obj-15}]
@@ -167,7 +187,12 @@ newAlienDirection :: Object -> Object -> Object
 newAlienDirection alien player  | x alien-x player < 0 = alien{dir = 180+270-atan((y alien-y player)/(x alien-x player))* 180/pi}
                                 | otherwise = alien{dir = 270-atan((y player-y alien)/(x player-x alien))* 180/pi}
 
-
+changeText :: Object -> GameState -> Object
+changeText obj@Tekst{myID=id, x=_, y=_, string=_} gstate = case id of
+                                                        "Lives" -> obj{string = show (lives gstate) ++ " lives"}
+                                                        "Score" -> obj{string = show (score gstate)}
+                                                        "" -> obj
+                                                        _ -> obj{string = "ERROR: ID not found"}
 
 -- \/\/\/ Get Objects from onscreen list \/\/\/
 getAsteroids :: [Object] -> [Object]
@@ -197,3 +222,10 @@ getPlayers list = [x | x <- list, isPlayer x]
 isPlayer :: Object -> Bool
 isPlayer Player{} = True
 isPlayer _ = False
+
+getTexts :: [Object] -> [Object]
+getTexts list = [x | x <- list, isText x]
+
+isText :: Object -> Bool
+isText Tekst{} = True
+isText _ = False

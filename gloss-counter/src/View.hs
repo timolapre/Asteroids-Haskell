@@ -12,13 +12,15 @@ viewPure :: GameState -> Picture
 viewPure gstate = case state gstate of
                     Menu -> showMenuState gstate
                     Running -> showRunState gstate
-                    GameOver -> undefined
+                    GameOver -> showGameOverState gstate
                     Paused -> showPausedState gstate
+
+showMenuState gstate = pictures (map toPicture menuState)
 
 showRunState gstate = case objects gstate of
                         x -> pictures (map toPicture x)
 
-showMenuState gstate = pictures (map toPicture menuState)
+showGameOverState gstate = pictures (map toPicture gameoverState)
 
 showPausedState gstate = pictures (map toPicture (objects gstate) ++ (map toPicture pausedState))
 
@@ -28,4 +30,4 @@ toPicture object = case object of
                 Asteroid x y size dir -> Color asteroidColor $ translate x y $ ThickCircle size 3
                 AlienShip x y size dir -> Color alienColor $ translate x y $ Polygon [(size/2,size/2),(size/2,-size/2),(-size/2,-size/2),(-size/2,size/2)]
                 Bullet x y size dir -> Color bulletColor $ translate x y $ circle size
-                Tekst x y string -> color textColor $ translate x y $ Scale 0.3 0.3 $ Text string
+                Tekst id x y string size -> color textColor $ translate x y $ Scale size size $ Text string
