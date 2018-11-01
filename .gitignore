@@ -3,3 +3,4 @@ gloss-counter/.cabal-sandbox
 gloss-counter/cabal.sandbox.config
 gloss-counter/cmd.exe
 gloss-counter/dist
+gloss-counter/highscores
