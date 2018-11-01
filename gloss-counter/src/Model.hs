@@ -8,7 +8,7 @@ data State = Menu | Running | GameOver | Paused
 
 data Vec2 = Vec2 (Float, Float)
 
-data Object =     Player {x :: Float, y :: Float, size :: Float, dir :: Float, speed :: Vec2}
+data Object =     Player {x :: Float, y :: Float, size :: Float, dir :: Float, speed :: Vec2, boosting :: Bool}
                 | Asteroid {x :: Float, y :: Float, size :: Float, dir :: Float}
                 | AlienShip {x :: Float, y :: Float, size :: Float, dir :: Float}
                 | Bullet {x :: Float, y :: Float, size :: Float, dir :: Float}
@@ -20,6 +20,7 @@ data TurnDir = Left | Right
 data Input = Input {left :: Bool, right :: Bool, forward :: Bool, backward :: Bool}
 
 playerColor = makeColor 255 0 0 1
+boostColor = makeColor 255 200 200 1
 asteroidColor = makeColor 255 255 0 1
 alienColor = makeColor 255 0 255 1
 bulletColor = makeColor 0 255 0 1
@@ -27,7 +28,7 @@ textColor = makeColor 255 255 255 1
 
 data GameState = GameState {state :: State, objects :: [Object], elapsedTime :: Float, cntrls :: Input, lives :: Int, score :: Int, highscore :: Int}
 
-player = Player {x = 0, y = 0, size = 30, dir = 0, speed = Vec2(0,0)}
+player = Player {x = 0, y = 0, size = 30, dir = 0, speed = Vec2(0,0), boosting = False}
 asteroid = Asteroid {x = -40, y = -20, size = 80, dir = 0}
 alien = AlienShip {x = -40, y = -20, size = 30, dir = 0}
 

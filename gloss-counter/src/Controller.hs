@@ -85,7 +85,8 @@ movePlayer obj inpt = do
                         let dx = if forward inpt && lngt (vx,vy) < 2 then vx + 0.1 * sin(direction * pi/180) - inc else vx - inc
                         let inc = vy / 60
                         let dy = if forward inpt && lngt (vx,vy) < 2 then vy + 0.1 * cos(direction * pi/180) - inc else vy - inc
-                        o2{x = x o2 + dx, y = y o2 + dy, speed = Vec2(dx,dy)}
+                        let boost = if forward inpt then True else False
+                        o2{x = x o2 + dx, y = y o2 + dy, speed = Vec2(dx,dy), boosting = boost}
                                 where lngt (vx,vy) = sqrt(vx*vx + vy*vy)
 
 rotate :: Object -> Float -> Object
@@ -131,7 +132,7 @@ runningStep secs gstate = do
                             let objs = objects gstate
                             let playerDied = collideList (getAsteroids objs) (objs!!0)
                             let player = if (playerDied)
-                                                        then Player {x = 0, y = 0, size = 30, dir = 0, speed = Vec2(0,0)}
+                                                        then Player {x = 0, y = 0, size = 30, dir = 0, speed = Vec2(0,0), boosting = False}
                                                         else movePlayer (objs!!0) (cntrls gstate)
                             let newAsteroids = if(playerDied)
                                                         then []
