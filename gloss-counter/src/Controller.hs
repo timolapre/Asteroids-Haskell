@@ -146,15 +146,19 @@ runningStep secs gstate = do
                                                         then GameOver
                                                         else state gstate
                             let newScore = if(collideList2 (getAsteroids objs) (getBullets objs))
-                                                        then score gstate + 1
+                                                        then score gstate + 10
                                                         else score gstate
-                            if(lives gstate <= 0) then writeFile "src/highscores.txt" (show newScore) else return()
+                            let newhighscore = if(newlives <= 0 && highscore gstate < newScore)
+                                                        then newScore
+                                                        else highscore gstate
+                            if(newlives <= 0 && highscore gstate < newScore)    then writeFile "src/highscores.txt" (show newScore) 
+                                                                                else return()
                             case elapsedTime gstate + secs >= 0.75 of
                               True -> do
                                     newast <- newAsteroid
-                                    return $ (gstate {elapsedTime = 0, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts ++ [newast], lives = newlives, state = newState, score = newScore})
+                                    return $ (gstate {elapsedTime = 0, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts ++ [newast], lives = newlives, state = newState, score = newScore, highscore = newhighscore})
                               _ -> do
-                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts, lives = newlives, state = newState, score = newScore})
+                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts, lives = newlives, state = newState, score = newScore, highscore = newhighscore})
 
 gameoverStep :: Float -> GameState -> IO GameState
 gameoverStep secs gstate = return gstate

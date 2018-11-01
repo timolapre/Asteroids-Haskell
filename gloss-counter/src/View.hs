@@ -20,7 +20,7 @@ showMenuState gstate = pictures (map toPicture menuState)
 showRunState gstate = case objects gstate of
                         x -> pictures (map toPicture x)
 
-showGameOverState gstate = pictures (map toPicture gameoverState)
+showGameOverState gstate = pictures (toPicture (getScore scoreText gstate) : toPicture (getScore highscoreText gstate) : (map toPicture gameoverState))
 
 showPausedState gstate = pictures (map toPicture (objects gstate) ++ (map toPicture pausedState))
 
@@ -31,3 +31,10 @@ toPicture object = case object of
                 AlienShip x y size dir -> Color alienColor $ translate x y $ Polygon [(size/2,size/2),(size/2,-size/2),(-size/2,-size/2),(-size/2,size/2)]
                 Bullet x y size dir -> Color bulletColor $ translate x y $ circle size
                 Tekst id x y string size -> color textColor $ translate x y $ Scale size size $ Text string
+
+getScore :: Object -> GameState -> Object
+getScore obj@Tekst{myID=id, x=_, y=_, string=_} gstate = case id of
+                                                        "Highscore" -> obj{string = "Highscore: " ++ show (highscore gstate)}
+                                                        "Score" -> obj{string = "Score: " ++ show (score gstate)}
+                                                        "" -> obj
+                                                        _ -> obj{string = "ERROR: ID not found"}

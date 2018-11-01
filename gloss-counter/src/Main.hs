@@ -7,10 +7,13 @@ import View
 import Graphics.Gloss.Interface.IO.Game
 
 main :: IO ()
-main = playIO (InWindow "Counter" (768, 512) (0, 0)) -- Or FullScreen
-              black            -- Background color
-              144              -- Frames per second
-              initialState     -- Initial state
-              view             -- View function
-              input            -- Event function
-              step             -- Step function
+main = do
+            highscorefile <- readFile "src/highscores.txt"
+            let highscorefileint = read highscorefile :: Int
+            playIO (InWindow "Counter" (768, 512) (0, 0)) -- Or FullScreen
+                black            -- Background color
+                144              -- Frames per second
+                initialState{highscore = highscorefileint}     -- Initial state
+                view             -- View function
+                input            -- Event function
+                step             -- Step function
