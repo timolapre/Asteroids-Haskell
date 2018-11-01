@@ -15,19 +15,22 @@ viewPure gstate = case state gstate of
                     GameOver -> showGameOverState gstate
                     Paused -> showPausedState gstate
 
-showMenuState gstate = pictures (map toPicture menuState)
+showMenuState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) menuState))
 
 showRunState gstate = case objects gstate of
-                        x -> pictures (map toPicture x)
+                        x -> pictures (concat (map  (toPicture (elapsedTime gstate)) x))
 
-showGameOverState gstate = pictures (map toPicture gameoverState)
+showGameOverState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) gameoverState))
 
-showPausedState gstate = pictures (map toPicture (objects gstate) ++ (map toPicture pausedState))
+showPausedState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) (objects gstate)) ++ concat (map  (toPicture (elapsedTime gstate)) pausedState))
 
-toPicture :: Object -> Picture
-toPicture object = case object of
-                Player x y size dir speed -> Color playerColor $ translate x y $ rotate dir $ Polygon [(size/1.5,-size/1.5),(-size/1.5,-size/1.5),(0,size)]
-                Asteroid x y size dir -> Color asteroidColor $ translate x y $ ThickCircle size 3
-                AlienShip x y size dir -> Color alienColor $ translate x y $ Polygon [(size/2,size/2),(size/2,-size/2),(-size/2,-size/2),(-size/2,size/2)]
-                Bullet x y size dir -> Color bulletColor $ translate x y $ circle size
-                Tekst id x y string size -> color textColor $ translate x y $ Scale size size $ Text string
+toPicture :: Float -> Object -> [Picture]
+toPicture time object = case object of
+                Player x y size dir speed boosting -> do 
+                                                        let f = translate x y . rotate dir
+                                                        let p = [Color playerColor $ f $ Polygon [(size/1.5,-size/1.5),(-size/1.5,-size/1.5),(0,size)]]
+                                                        if boosting && mod (round (time*20)) 2 == 0 then p ++ [Color boostColor $ f $ Polygon [(size/3,-size/1.5),(0,-size),(-size/3,-size/1.5)]] else p
+                Asteroid x y size dir -> [Color asteroidColor $ translate x y $ ThickCircle size 3]
+                AlienShip x y size dir -> [Color alienColor $ translate x y $ Polygon [(size/2,size/2),(size/2,-size/2),(-size/2,-size/2),(-size/2,size/2)]]
+                Bullet x y size dir -> [Color bulletColor $ translate x y $ circle size]
+                Tekst id x y string size -> [color textColor $ translate x y $ Scale size size $ Text string]
