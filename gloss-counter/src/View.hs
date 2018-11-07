@@ -6,9 +6,11 @@ import Graphics.Gloss
 import Model
 import Controller
 
+-- View (in IO)
 view :: GameState -> IO Picture
 view = return . viewPure
 
+-- ViewPure (not IO)
 viewPure :: GameState -> Picture
 viewPure gstate = case state gstate of
                     Menu -> showMenuState gstate
@@ -16,15 +18,20 @@ viewPure gstate = case state gstate of
                     GameOver -> showGameOverState gstate
                     Paused -> showPausedState gstate
 
+-- Show Menu State
 showMenuState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) menuState))
 
+-- Show Run State
 showRunState gstate = case objects gstate of
                         x -> pictures (concat (map  (toPicture (elapsedTime gstate)) x))
 
+-- Show Game Over State
 showGameOverState gstate = pictures (concat((toPicture (elapsedTime gstate) (getScore scoreText gstate)) : (toPicture (elapsedTime gstate) (getScore highscoreText gstate)) : (map  (toPicture (elapsedTime gstate)) gameoverState)))
 
+-- Show Paused State
 showPausedState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) (objects gstate)) ++ concat (map  (toPicture (elapsedTime gstate)) pausedState))
 
+-- Object to on screen graphics (toPicture)
 toPicture :: Float -> Object -> [Picture]
 toPicture time object = case object of
                 Player x y size dir speed boosting -> do 
