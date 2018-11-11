@@ -76,7 +76,7 @@ pausedState :: [GameObject]
 pausedState = [pausedText]
 
 -- gameverState (= 1 or multiple Text objects)
-gameoverText = Tekst {myID = "", myIntID = 0, x = -250, y = 0, string = "Game Over! press Space to play again", size = 0.2, colour = textColor}
+gameoverText = Tekst {myID = "", myIntID = 0, x = -250, y = 0, string = "Game Over! press Enter to play again", size = 0.2, colour = textColor}
 goToMenuText = Tekst {myID = "", myIntID = 0, x = -250, y = -50, string = "Press B to pick a different mode", size = 0.2, colour = textColor}
 gameoverState :: [GameObject]
 gameoverState = [gameoverText, goToMenuText]

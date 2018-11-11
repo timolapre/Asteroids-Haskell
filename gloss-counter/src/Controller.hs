@@ -40,7 +40,7 @@ pausedInput event gstate = case event of
 gameoverInput :: Event -> GameState -> IO GameState
 gameoverInput event gstate = case event of
                                 (EventKey (Char 'b') Down _ _) -> return gstate{state = Menu}
-                                (EventKey (SpecialKey KeySpace) Down _ _) -> return gstate {state = Running, lives = 3, score = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}}
+                                (EventKey (SpecialKey KeyEnter) Down _ _) -> return gstate {state = Running, lives = 3, score = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}}
                                 _ -> return gstate
 
 -- Handle user input when playing the game (/when game is running)
