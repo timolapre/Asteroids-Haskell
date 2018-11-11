@@ -163,7 +163,7 @@ pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
 
 alienShootCheck :: Object -> Float -> [Object]
-alienShootCheck alien secs      | timer alien > 2 = [alien{timer = 0}, AlienBullet {x = x alien, y = y alien, size = 10, dir = dir alien}]
+alienShootCheck alien secs      | timer alien > 2 = [alien] --[alien{timer = 0}, AlienBullet {x = x alien, y = y alien, size = 10, dir = dir alien}]
                                 | otherwise = [alien{timer = timer alien + secs}]
 
 -- Return a new random Asteroid
