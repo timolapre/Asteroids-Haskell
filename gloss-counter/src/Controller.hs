@@ -167,7 +167,7 @@ gameoverStep secs gstate = return gstate
 pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
 
-alienShootCheck :: Object -> Float -> [GameObject]
+alienShootCheck :: GameObject -> Float -> [GameObject]
 alienShootCheck alien secs      | timer alien > 2 = [alien] --[alien{timer = 0}, AlienBullet {x = x alien, y = y alien, size = 10, dir = dir alien}]
                                 | otherwise = [alien{timer = timer alien + secs}]
 
