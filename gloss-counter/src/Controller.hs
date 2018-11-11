@@ -143,7 +143,7 @@ runningStep secs gstate = do
                             let newhighscore = if(newlives <= 0 && highscore gstate < newScore)
                                                         then newScore
                                                         else highscore gstate
-                            if(newlives <= 0 && highscore gstate < newScore)    then B.writeFile "src/highscores.txt" (encode (HighscoreEntry {name = "Player", value = newScore}))
+                            if(newlives <= 0 && highscore gstate < newScore)    then B.writeFile "src/highscores.json" (encode (HighscoreEntry {name = "Player", value = newScore}))
                                                                                 else return()
                             case elapsedTime gstate + secs >= 0.7 of
                               True -> do

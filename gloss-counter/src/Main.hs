@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy as B
 
 main :: IO ()
 main = do
-            highscorefile <- B.readFile "src/highscores.txt"
+            highscorefile <- B.readFile "src/highscores.json"
             let highscorefileint = case decode highscorefile of Just (HighscoreEntry _ value) -> value
                                                                 _ -> 0
             playIO (InWindow "Counter" (768, 512) (0, 0))       -- Or FullScreen
