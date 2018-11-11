@@ -30,8 +30,8 @@ showGameOverState gstate = pictures (concat((toPicture (elapsedTime gstate) (get
 -- Show Paused State
 showPausedState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) (objects gstate)) ++ concat (map  (toPicture (elapsedTime gstate)) pausedState))
 
--- Object to on screen graphics (toPicture)
-toPicture :: Float -> Object -> [Picture]
+-- GameObject to on screen graphics (toPicture)
+toPicture :: Float -> GameObject -> [Picture]
 toPicture time object = case object of
                 Player x y size dir speed boosting -> do 
                                                         let f = translate x y . Graphics.Gloss.rotate dir

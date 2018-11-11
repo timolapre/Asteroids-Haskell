@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings, DeriveGeneric #-}
+
 module Main where
 
 import Controller
@@ -5,11 +7,14 @@ import Model
 import View
 
 import Graphics.Gloss.Interface.IO.Game
+import Data.Aeson
+import qualified Data.ByteString.Lazy as B
 
 main :: IO ()
 main = do
-            highscorefile <- readFile "src/highscores.txt"
-            let highscorefileint = read highscorefile :: Int
+            highscorefile <- B.readFile "src/highscores.txt"
+            let highscorefileint = case decode highscorefile of Just (HighscoreEntry _ value) -> value
+                                                                _ -> 0
             playIO (InWindow "Counter" (768, 512) (0, 0))       -- Or FullScreen
                 black                                           -- Background color
                 144                                             -- Frames per second
