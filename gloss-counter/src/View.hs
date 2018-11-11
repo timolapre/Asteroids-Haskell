@@ -19,11 +19,10 @@ viewPure gstate = case state gstate of
                     Paused -> showPausedState gstate
 
 -- Show Menu State
-showMenuState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) menuState))
+showMenuState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) (tail (objects gstate))))
 
 -- Show Run State
-showRunState gstate = case objects gstate of
-                        x -> pictures (concat (map  (toPicture (elapsedTime gstate)) x))
+showRunState gstate = pictures (concat (map  (toPicture (elapsedTime gstate)) (objects gstate)))
 
 -- Show Game Over State
 showGameOverState gstate = pictures (concat((toPicture (elapsedTime gstate) (getScore scoreText gstate)) : (toPicture (elapsedTime gstate) (getScore highscoreText gstate)) : (map  (toPicture (elapsedTime gstate)) gameoverState)))
@@ -39,6 +38,7 @@ toPicture time object = case object of
                                                         let p = [Color playerColor $ f $ Polygon [(size/1.5,-size/1.5),(-size/1.5,-size/1.5),(0,size)]]
                                                         if boosting && mod (round (time*20)) 2 == 0 then p ++ [Color boostColor $ f $ Polygon [(size/3,-size/1.5),(0,-size),(-size/3,-size/1.5)]] else p
                 Asteroid x y size dir -> [Color asteroidColor $ translate x y $ ThickCircle size 3]
-                AlienShip x y size dir -> [Color alienColor $ translate x y $ Polygon [(size/2,size/2),(size/2,-size/2),(-size/2,-size/2),(-size/2,size/2)]]
+                AlienShip x y size dir timer -> [Color alienColor $ translate x y $ Polygon [(size/2,size/2),(size/2,-size/2),(-size/2,-size/2),(-size/2,size/2)]]
                 Bullet x y size dir -> [Color bulletColor $ translate x y $ circle size]
-                Tekst id x y string size -> [color textColor $ translate x y $ Scale size size $ Text string]
+                AlienBullet x y size dir -> [Color bulletColor $ translate x y $ circle size]
+                Tekst id intid x y string size colour -> [color colour $ translate x y $ Scale size size $ Text string]

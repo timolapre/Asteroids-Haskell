@@ -19,7 +19,10 @@ input event gstate = case state gstate of
 -- Handle user input when on Menu Screen
 menuInput :: Event -> GameState -> IO GameState
 menuInput event gstate = case event of
-                                (EventKey (SpecialKey KeySpace) Down _ _) -> return gstate {state = Running}
+                                (EventKey (Char 'w') Down _ _) -> if(level gstate > 1) then return gstate {level = level gstate - 1} else return gstate
+                                (EventKey (Char 's') Down _ _) -> if(level gstate < 3) then return gstate {level = level gstate + 1} else return gstate
+                                (EventKey (SpecialKey keyEnter) Down _ _) -> return gstate {state = Running, lives = 3, score = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}}
+                                (EventKey (SpecialKey keySpace) Down _ _) -> return gstate {state = Running, lives = 3, score = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}}
                                 _ -> return gstate
 
 -- Handle user input when game is paused                                
@@ -31,6 +34,7 @@ pausedInput event gstate = case event of
 -- Handle user input when game over                                
 gameoverInput :: Event -> GameState -> IO GameState
 gameoverInput event gstate = case event of
+                                (EventKey (Char 'b') Down _ _) -> return gstate{state = Menu}
                                 (EventKey (SpecialKey KeySpace) Down _ _) -> return gstate {state = Running, lives = 3, score = 0, cntrls = Input{left = False, right = False, forward = False, backward = False}}
                                 _ -> return gstate
 
@@ -100,21 +104,27 @@ step secs gstate = case state gstate of
 
 -- Step function when on menu
 menuStep :: Float -> GameState -> IO GameState
-menuStep secs gstate = return gstate
+menuStep secs gstate = do 
+                                let texts = [changeTextMenu (changeTextColor x gstate) | x <- getTexts (objects gstate)]
+                                return gstate{objects = (getAllNoTexts (objects gstate)) ++ texts}
 
 -- Step function when game is running
 runningStep :: Float -> GameState -> IO GameState
 runningStep secs gstate = do
                             let objs = objects gstate
-                            let playerDied = collideList (getAsteroids objs) (objs!!0)
+                            let playerDied = collideList (getAsteroids objs ++ getAliens objs) (objs!!0)
                             let player = if (playerDied)
                                                         then Player {x = 0, y = 0, size = 30, dir = 0, speed = Vec2(0,0), boosting = False}
                                                         else movePlayer (objs!!0) (cntrls gstate)
+                            --let player2 = movePlayer (objs!!1) (cntrls gstate) --for local mulitplayer (WIP)
                             let newAsteroids = if(playerDied)
                                                         then []
                                                         else concat [splitAsteroid (moveDir obj (dir obj) 0.7) (getBullets objs) | obj <- getAsteroids objs, abs (x obj) <= 668, abs (y obj) <= 412]
-                            let newBullets = [moveDir obj (dir obj) 5 | obj <- getBullets objs, abs (x obj) <= 668, abs (y obj) <= 412, collideList (getAsteroids objs) obj == False]
-                            let newAliens = [moveDir obj (dir (newAlienDirection obj player)) 0.5 | obj <- getAliens objs, abs (x obj) <= 668, abs (y obj) <= 412]
+                            let newBullets = [moveDir obj (dir obj) 5 | obj <- getBullets objs, abs (x obj) <= 668, abs (y obj) <= 412, collideList (getAsteroids objs ++ getAliens objs) obj == False]
+                            --let newAlienBullets = [moveDir obj (dir obj) 1 | obj <- getAlienBullets objs, abs (x obj) <= 668, abs (y obj) <= 412] --AlienShip shooting (WIP)
+                            let newAliens = if (playerDied) 
+                                                        then []
+                                                        else concat [alienShootCheck (moveDir obj (dir (newAlienDirection obj player)) 0.4) secs | obj <- getAliens objs, abs (x obj) <= 668, abs (y obj) <= 412, collideList (getBullets objs) obj == False]
                             let newTexts = [changeText x gstate | x <- getTexts objs]
                             let newlives = if(playerDied)
                                                         then (lives gstate-1)
@@ -122,7 +132,7 @@ runningStep secs gstate = do
                             let newState = if(lives gstate <= 0)
                                                         then GameOver
                                                         else state gstate
-                            let newScore = if(collideList2 (getAsteroids objs) (getBullets objs))
+                            let newScore = if(collideList2 (getAsteroids objs ++ getAliens objs) (getBullets objs))
                                                         then score gstate + 10
                                                         else score gstate
                             let newhighscore = if(newlives <= 0 && highscore gstate < newScore)
@@ -130,12 +140,19 @@ runningStep secs gstate = do
                                                         else highscore gstate
                             if(newlives <= 0 && highscore gstate < newScore)    then writeFile "src/highscores.txt" (show newScore) 
                                                                                 else return()
-                            case elapsedTime gstate + secs >= 0.75 of
+                            case elapsedTime gstate + secs >= 0.7 of
                               True -> do
                                     newast <- newAsteroid
-                                    return $ (gstate {elapsedTime = 0, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts ++ [newast], lives = newlives, state = newState, score = newScore, highscore = newhighscore})
+                                    newalien <- newAlien
+                                    random <- randomNumber 0 3
+                                    let newobject = if(level gstate == 2)
+                                                        then if(round random == 0)      then newalien
+                                                                                        else newast
+                                                        else if (level gstate == 1) then newast
+                                                        else newalien
+                                    return $ (gstate {elapsedTime = 0, objects = player : newobject : newAsteroids ++ newBullets {-++ newAlienBullets-} ++ newAliens ++ newTexts, lives = newlives, state = newState, score = newScore, highscore = newhighscore})
                               _ -> do
-                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : newAsteroids ++ newBullets ++ newAliens ++ newTexts, lives = newlives, state = newState, score = newScore, highscore = newhighscore})
+                                    return $ (gstate {elapsedTime = elapsedTime gstate + secs, objects = player : newAsteroids ++ newBullets {-++ newAlienBullets-} ++ newAliens ++ newTexts, lives = newlives, state = newState, score = newScore, highscore = newhighscore})
 
 -- Step function when game over                                    
 gameoverStep :: Float -> GameState -> IO GameState
@@ -144,6 +161,10 @@ gameoverStep secs gstate = return gstate
 -- Step function when game is paused
 pausedStep :: Float -> GameState -> IO GameState
 pausedStep secs gstate = return gstate
+
+alienShootCheck :: Object -> Float -> [Object]
+alienShootCheck alien secs      | timer alien > 2 = [alien{timer = 0}, AlienBullet {x = x alien, y = y alien, size = 10, dir = dir alien}]
+                                | otherwise = [alien{timer = timer alien + secs}]
 
 -- Return a new random Asteroid
 newAsteroid :: IO Object
@@ -162,15 +183,33 @@ newAsteroid = do
                       3 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
                               return Asteroid {x = (384+30), y = randY, size = randSize, dir = randDir + (randPos*90)}
 
+newAlien :: IO Object
+newAlien = do
+                let posoffset = 0
+                randPos <- randomNumber 0 3
+                case round randPos of
+                        0 -> do randX <- randomNumber (-384+posoffset) (384-posoffset)
+                                return AlienShip {x = randX, y = (-256-30), size = 30, dir = 0, timer = 0}
+                        1 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
+                                return AlienShip {x = (-384-30), y = randY, size = 30, dir = 0, timer = 0}
+                        2 -> do randX <- randomNumber (-384+posoffset) (384-posoffset)
+                                return AlienShip {x = randX, y = (256+30), size = 30, dir = 0, timer = 0}
+                        3 -> do randY <- randomNumber (-256+posoffset) (256-posoffset)
+                                return AlienShip {x = (384+30), y = randY, size = 30, dir = 0, timer = 0}
+
 -- Check for collision between 2 objects
 collide :: Object -> Object -> Bool
-collide obj1@Asteroid{} obj2@Player{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
-                                      | otherwise = False
-collide obj1@Asteroid{} obj2@Bullet{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
-                                      | otherwise = False
-collide obj1@Bullet{} obj2@Asteroid{} | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
-                                      | otherwise = False
-collide _ _ = False
+{-collide obj1@Asteroid{} obj2@Player{}   | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                                        | otherwise = False
+collide obj1@Asteroid{} obj2@Bullet{}   | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                                        | otherwise = False
+collide obj1@Bullet{} obj2@Asteroid{}   | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                                        | otherwise = False
+collide obj1@AlienShip{} obj2@Player{}  | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                                        | otherwise = False
+collide _ _ = False-}
+collide obj1 obj2       | (x obj2 - x obj1)^2 + (y obj1 - y obj2)^2 <= (size obj1 + size obj2)^2 = True
+                        | otherwise = False
 
 -- Check Collision between a list of objects and a single object
 collideList :: [Object] -> Object -> Bool
@@ -196,8 +235,27 @@ changeText :: Object -> GameState -> Object
 changeText obj@Tekst{myID=id, x=_, y=_, string=_} gstate = case id of
                                                         "Lives" -> obj{string = show (lives gstate) ++ " lives"}
                                                         "Score" -> obj{string = show (score gstate)}
+                                                        "menu" ->  obj{string = ""}
+                                                        "pause" -> obj{string = "Press p to Pause"}
                                                         "" -> obj
                                                         _ -> obj{string = "ERROR: ID not found"}
+
+changeTextMenu :: Object -> Object
+changeTextMenu obj@Tekst{myID=id} = case id of
+                                                "Lives" -> obj{string = ""}
+                                                "Score" -> obj{string = ""}
+                                                "menu" ->       if(myIntID obj == 0) then obj{string = "Asteroids! Choose a level"}
+                                                                else if(myIntID obj == 1) then obj{string = "Level 1: Only Asteroids"}
+                                                                else if(myIntID obj == 2) then obj{string = "Level 2: Asteroids and Alien ships"}
+                                                                else if(myIntID obj == 3) then obj{string = "Level 3: Only Alien ships"}
+                                                                else obj
+                                                "pause" -> obj{string = ""}
+                                                "" -> obj
+                                                _ -> obj{string = "ERROR: ID not found"}
+
+changeTextColor :: Object -> GameState -> Object
+changeTextColor txt gstate      | myIntID txt == level gstate = txt{colour=selectTextColor}
+                                | otherwise = txt{colour = textColor}
 
 -- Update the score and highscore on the game over screen
 getScore :: Object -> GameState -> Object
@@ -222,6 +280,13 @@ isBullet :: Object -> Bool
 isBullet Bullet{} = True
 isBullet _ = False
 
+getAlienBullets :: [Object] -> [Object]
+getAlienBullets list = [x | x <- list, isAlienBullet x]
+
+isAlienBullet :: Object -> Bool
+isAlienBullet AlienBullet{} = True
+isAlienBullet _ = False
+
 getAliens :: [Object] -> [Object]
 getAliens list = [x | x <- list, isAlien x]
 
@@ -242,3 +307,6 @@ getTexts list = [x | x <- list, isText x]
 isText :: Object -> Bool
 isText Tekst{} = True
 isText _ = False
+
+getAllNoTexts :: [Object] -> [Object]
+getAllNoTexts list = [x | x <- list, isText x == False]
