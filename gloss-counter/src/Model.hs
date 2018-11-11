@@ -17,9 +17,7 @@ data Object =     Player {x :: Float, y :: Float, size :: Float, dir :: Float, s
                 | Bullet {x :: Float, y :: Float, size :: Float, dir :: Float}
                 | AlienBullet {x :: Float, y :: Float, size :: Float, dir :: Float}
                 | Tekst {myID :: String, myIntID :: Int, x :: Float, y :: Float, string :: String, size :: Float, colour :: Color}
-
--- Direction                
-data Direction = North | East | South | West
+                
 --TurnDirection
 data TurnDir = Left | Right
 -- Player Input for movement
